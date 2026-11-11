@@ -1,0 +1,36 @@
+version: "3.8"
+
+services:
+  # 1. FastAPI Machine Learning Engine
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: gridguard-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    extra_hosts:
+      # Allows containers to access Ollama running on your host machine
+      - "host.docker.internal:host-gateway"
+
+  # 2. Streamlit Web Dashboard
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    container_name: gridguard-dashboard
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "8501:8501"
+    environment:
+      - PYTHONUNBUFFERED=1
+      # Points Streamlit to the backend container over Docker network
+      - API_URL=http://api:8000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

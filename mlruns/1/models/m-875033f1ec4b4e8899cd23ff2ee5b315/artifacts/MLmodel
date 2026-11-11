@@ -1,0 +1,22 @@
+artifact_path: file:D:/deep learning/AI_Theif_Detection/mlruns/1/models/m-875033f1ec4b4e8899cd23ff2ee5b315/artifacts
+flavors:
+  python_function:
+    data: data
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.tensorflow
+    python_version: 3.14.3
+  tensorflow:
+    code: null
+    data: data
+    keras_version: 2.22.0-rc0
+    model_type: keras
+    save_format: tf
+mlflow_version: 3.18.0
+model_id: m-875033f1ec4b4e8899cd23ff2ee5b315
+model_size_bytes: 240955
+model_uuid: m-875033f1ec4b4e8899cd23ff2ee5b315
+prompts: null
+run_id: 4812253d2b8e4a50946b10dd5320715a
+utc_time_created: '2026-11-10 09:10:41.421216'

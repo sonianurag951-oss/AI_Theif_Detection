@@ -1,0 +1,27 @@
+artifact_path: file:D:/deep learning/AI_Theif_Detection/mlruns/1/models/m-bd274c5018584da2b254a3b5f152bf4d/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.skops
+    predict_fn: predict
+    python_version: 3.14.3
+  sklearn:
+    code: null
+    pickled_model: model.skops
+    serialization_format: skops
+    sklearn_version: 1.9.1
+    skops_trusted_types:
+    - numpy.dtype
+    - xgboost.core.Booster
+    - xgboost.sklearn.XGBClassifier
+    - sklearn.tree._tree.Tree
+mlflow_version: 3.18.0
+model_id: m-bd274c5018584da2b254a3b5f152bf4d
+model_size_bytes: 377434
+model_uuid: m-bd274c5018584da2b254a3b5f152bf4d
+prompts: null
+run_id: c7ce00e8163f4ffabf52155ef2d5b430
+utc_time_created: '2026-11-10 08:20:35.682980'
