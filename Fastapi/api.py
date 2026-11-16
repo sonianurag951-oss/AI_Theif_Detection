@@ -37,33 +37,20 @@ MODEL_DIR = Path(
     )
 )
 
-THRESHOLD = float(os.getenv("GRIDGUARD_THRESHOLD", "0.5"))
+THRESHOLD = float(os.getenv("GRIDGUARD_THRESHOLD", "0.20"))
 MAX_UPLOAD_ROWS = 60_000
 OLLAMA_TAGS_URL = "http://localhost:11434/api/tags"
 
-
-pipe = joblib.load(
-    MODEL_DIR / "best_theft_detection_pipeline.pkl"
-)
+pipe = joblib.load(MODEL_DIR / "xgboost_pipeline.pkl")
+explainer = joblib.load(MODEL_DIR / "xgboost_shap_explainer.pkl")
 
 feature_cols = json.loads(
-    (MODEL_DIR / "feature_cols.json").read_text(
-        encoding="utf-8"
-    )
-)
-
-explainer = shap.TreeExplainer(
-    pipe.named_steps["model"]
+    (MODEL_DIR / "feature_cols.json").read_text(encoding="utf-8")
 )
 
 typical_file = MODEL_DIR / "typical_values.json"
-
 typical = (
-    pd.Series(
-        json.loads(
-            typical_file.read_text(encoding="utf-8")
-        )
-    )
+    pd.Series(json.loads(typical_file.read_text(encoding="utf-8")))
     if typical_file.exists()
     else None
 )
@@ -346,3 +333,6 @@ def explain_customer(
         "note": note,
         "note_source": source
     }
+    
+    
+    

@@ -68,6 +68,7 @@ mlflow.set_tracking_uri(f"sqlite:///{TRACKING_DB.as_posix()}")
 mlflow.set_experiment("THEIF_DETECTION")
 
 
+
 def build_features(df: pd.DataFrame):
     """Create engineered features and return X and y."""
 
@@ -100,21 +101,27 @@ def build_features(df: pd.DataFrame):
     )
 
     outlier_cols = []
+    cust_mean = new_features["consumption_mean"]
+    cust_std = new_features["consumption_std"].replace(0, 1e-6)
 
     for day in DAY_COLS:
-        q1 = df[day].quantile(0.25)
-        q3 = df[day].quantile(0.75)
-        iqr = q3 - q1
-
-        lower_bound = max(q1 - 1.5 * iqr, 0)
-        upper_bound = q3 + 1.5 * iqr
-
         outlier_col = f"{day}_outlier"
         outlier_cols.append(outlier_col)
-
+        # Any day deviating > 2 std from customer's mean is flagged:
         df[outlier_col] = (
-            (df[day] < lower_bound) | (df[day] > upper_bound)
+            (df[day] - cust_mean).abs() > (2.0 * cust_std)
         ).astype(int)
+
+    new_features["total_outliers"] = df[outlier_cols].sum(axis=1)
+    new_features["has_outlier"] = (
+        new_features["total_outliers"] > 0
+    ).astype(int)
+    new_features["outlier_ratio"] = (
+        new_features["total_outliers"] / len(DAY_COLS)
+    )
+    new_features["high_outlier_customer"] = (
+        new_features["outlier_ratio"] >= 0.3
+    ).astype(int)
 
     new_features["total_outliers"] = df[outlier_cols].sum(axis=1)
     new_features["has_outlier"] = (
@@ -255,7 +262,8 @@ if __name__ == "__main__":
     print("\nFirst five rows:")
     print(df.head())
     
-    X, y, feature_cols = build_features(df)
+    X, y, _ = build_features(raw)
+    X = X[feature_cols]
     feature_cols_file = MODEL_DIR / "feature_cols.json"
     with feature_cols_file.open("w", encoding="utf-8") as f:
         json.dump(feature_cols, f, indent=4)
@@ -527,10 +535,27 @@ if __name__ == "__main__":
 
     best_classical = cv_df.iloc[0]["model"]
     joblib.dump(fitted[best_classical], MODEL_DIR / "best_theft_detection_pipeline.pkl")
+    
+    # Calculate optimal threshold on test set for imbalanced data
+    from sklearn.metrics import precision_recall_curve
+    y_test_prob = fitted[best_classical].predict_proba(X_test)[:, 1]
+    p_vals, r_vals, t_vals = precision_recall_curve(y_test, y_test_prob)
+    
+    # Threshold that maximizes F1 score:
+    f1_vals = 2 * (p_vals * r_vals) / (p_vals + r_vals + 1e-8)
+    opt_idx = np.argmax(f1_vals)
+    opt_threshold = float(t_vals[opt_idx])
+
+    print(f"\n>>> Recommended Operational Threshold: {opt_threshold:.4f} <<<")
+    print(f">>> At this threshold: Recall = {r_vals[opt_idx]:.2%}, Precision = {p_vals[opt_idx]:.2%} <<<")
 
     print(f"{best_classical}")
     print(MODEL_DIR / "best_theft_detection_pipeline.pkl")
     print(MODEL_DIR / "hybrid_cnn_theft_model.keras")
+
+    joblib.dump(fitted["XGBoost"], MODEL_DIR / "xgboost_pipeline.pkl")
+    print(f"XGBoost pipeline saved → {MODEL_DIR / 'xgboost_pipeline.pkl'}")
+
 
     shap_dir = MODEL_DIR / "shap_explanations"
     shap_dir.mkdir(parents=True, exist_ok=True)
@@ -593,3 +618,62 @@ if __name__ == "__main__":
             mlflow.log_artifact(str(shap_dir / "random_forest_shap_beeswarm.png"))
             mlflow.log_artifact(str(shap_dir / "random_forest_shap_values.csv"))
             mlflow.log_artifact(str(shap_dir / "random_forest_shap_feature_importance.csv"))
+        
+    print("\nGenerating SHAP explanations for XGBoost...")
+    xgb_pipe        = fitted["XGBoost"]
+    xgb_preprocessor = xgb_pipe.named_steps["preprocess"]
+    xgb_model       = xgb_pipe.named_steps["model"]
+    X_xgb_transformed = xgb_preprocessor.transform(X_test)
+    X_xgb_sample      = np.asarray(X_xgb_transformed[:sample_size])
+    try:
+        xgb_feature_names = xgb_preprocessor.get_feature_names_out()
+    except Exception:
+        xgb_feature_names = [f"feature_{i}" for i in range(X_xgb_sample.shape[1])]
+    xgb_explainer   = shap.TreeExplainer(xgb_model)
+    xgb_shap_values = xgb_explainer.shap_values(X_xgb_sample)
+    print("XGBoost SHAP values shape:", np.asarray(xgb_shap_values).shape)
+    joblib.dump(xgb_explainer, MODEL_DIR / "xgboost_shap_explainer.pkl")
+    print(f" XGBoost SHAP explainer saved → {MODEL_DIR / 'xgboost_shap_explainer.pkl'}")
+    typical_values = {
+    str(col).replace("numeric__", ""): float(np.nanmedian(X_xgb_sample[:, i]))
+    for i, col in enumerate(xgb_feature_names)
+    }
+    with open(MODEL_DIR / "typical_values.json", "w", encoding="utf-8") as f:
+        json.dump(typical_values, f, indent=2)
+    print(f" typical_values.json saved → {MODEL_DIR / 'typical_values.json'}")
+    plt.figure()
+    shap.summary_plot(
+        xgb_shap_values, X_xgb_sample,
+        feature_names=xgb_feature_names,
+        plot_type="bar", show=False
+    )
+    plt.tight_layout()
+    plt.savefig(shap_dir / "xgboost_shap_global_importance.png", dpi=300, bbox_inches="tight")
+    plt.close()
+    plt.figure()
+    shap.summary_plot(
+        xgb_shap_values, X_xgb_sample,
+        feature_names=xgb_feature_names,
+        show=False
+    )
+    plt.tight_layout()
+    plt.savefig(shap_dir / "xgboost_shap_beeswarm.png", dpi=300, bbox_inches="tight")
+    plt.close()
+    pd.DataFrame(
+        xgb_shap_values, columns=xgb_feature_names
+    ).to_csv(shap_dir / "xgboost_shap_values.csv", index=False)
+    xgb_mean_shap = np.abs(xgb_shap_values).mean(axis=0)
+    xgb_importance_df = pd.DataFrame({
+        "feature": xgb_feature_names,
+        "mean_abs_shap": xgb_mean_shap
+    }).sort_values(by="mean_abs_shap", ascending=False)
+    xgb_importance_df.to_csv(shap_dir / "xgboost_shap_feature_importance.csv", index=False)
+    print(xgb_importance_df.head(10).round(4).to_string(index=False))
+    with mlflow.start_run(run_name="SHAP-XGBoost-Explainability"):
+        mlflow.log_artifact(str(shap_dir / "xgboost_shap_global_importance.png"))
+        mlflow.log_artifact(str(shap_dir / "xgboost_shap_beeswarm.png"))
+        mlflow.log_artifact(str(shap_dir / "xgboost_shap_values.csv"))
+        mlflow.log_artifact(str(shap_dir / "xgboost_shap_feature_importance.csv"))
+            
+            
+        

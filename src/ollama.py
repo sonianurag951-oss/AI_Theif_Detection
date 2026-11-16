@@ -71,12 +71,16 @@ def top_reasons(shap_row, X_row, typical, feature_cols, k=TOP_REASONS):
         if name in DAY_COLS or name.endswith(SKIP_SUFFIXES):
             continue
         reasons.append({
-            "feature": name,
-            "label": LABELS.get(name, name),
-            "value": round(float(X_row[name]), 2),
-            "typical": round(float(typical[name]), 2),
-            "shap": round(float(shap_row[i]), 3),
-        })
+        "feature": name,
+        "label": LABELS.get(name, name),
+        "value": round(float(X_row[name]), 2),
+        "typical": round(float(
+        typical.get(name)
+        or typical.get(f"numeric__{name}")
+        or 0.0
+        ), 2),
+        "shap": round(float(shap_row[i]), 3),
+     })
     return reasons
 
 # OLLAMA

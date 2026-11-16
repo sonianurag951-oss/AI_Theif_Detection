@@ -60,7 +60,7 @@ st.sidebar.caption("Advanced AI Electricity Theft Detection")
 
 api_url = st.sidebar.text_input("FastAPI Address", "http://127.0.0.1:8000").rstrip("/")
 ollama_model = st.sidebar.text_input("Ollama LLM Model", "llama3.2:3b")
-risk_threshold = st.sidebar.slider("Inspection Threshold", 0.10, 0.90, 0.50, 0.05)
+risk_threshold = st.sidebar.slider("Inspection Threshold", 0.05, 0.60, 0.20, 0.01)
 use_ollama = st.sidebar.toggle("Enable AI Inspection Notes", value=True)
 
 st.sidebar.divider()
