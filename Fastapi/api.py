@@ -29,13 +29,19 @@ from src.ollama import (
     top_reasons,
 )
 
-
+from Sql.fetch_data import fetch_customer_reading, get_sample_customers
 MODEL_DIR = Path(
     os.getenv(
         "GRIDGUARD_MODELS",
-        r"D:\deep learning\AI_Theif_Detection\Models"
+        str(PROJECT_ROOT / "Models")
     )
 )
+# MODEL_DIR = Path(
+#     os.getenv(
+#         "GRIDGUARD_MODELS",
+#         r"D:\deep learning\AI_Theif_Detection\Models"
+#     )
+# )
 
 THRESHOLD = float(os.getenv("GRIDGUARD_THRESHOLD", "0.20"))
 MAX_UPLOAD_ROWS = 60_000
@@ -259,8 +265,7 @@ def explain_customer(
     X, y, returned_feature_cols = build_features(raw)
     feature_cols = returned_feature_cols
 
-    # ✅ FALLBACK: If typical is still None, use the customer's own baseline
-    # so it NEVER crashes with 503:
+
     current_typical = typical if typical is not None else X.iloc[0]
 
     probability = float(pipe.predict_proba(X)[0, 1])
@@ -333,6 +338,44 @@ def explain_customer(
         "note": note,
         "note_source": source
     }
-    
-    
-    
+@app.get("/readings")
+def get_readings(
+    customer_id: str | None = None,
+    meter_id: str | None = None
+):
+    """Fetch 26-day readings for a given customer_id and/or meter_id."""
+    if not customer_id and not meter_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Please provide at least customer_id or meter_id."
+        )
+
+    data = fetch_customer_reading(customer_id=customer_id, meter_id=meter_id)
+    if not data.get("found"):
+        raise HTTPException(
+            status_code=404,
+            detail=data.get("error", "Customer readings not found.")
+        )
+    return data
+
+
+@app.get("/customer/{customer_id}")
+def get_customer(
+    customer_id: str,
+    meter_id: str | None = None
+):
+    """Fetch a single customer's profile and 26-day readings by customer_id."""
+    data = fetch_customer_reading(customer_id=customer_id, meter_id=meter_id)
+    if not data.get("found"):
+        raise HTTPException(
+            status_code=404,
+            detail=data.get("error", "Customer not found.")
+        )
+    return data
+
+
+@app.get("/customers/samples")
+def sample_customers(limit: int = 10):
+    """Retrieve sample customer records (theft and normal) from the dataset."""
+    samples = get_sample_customers(limit=limit)
+    return {"samples": samples}
