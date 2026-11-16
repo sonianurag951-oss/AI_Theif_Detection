@@ -466,7 +466,7 @@ with tab_diagnose:
             tooltip=[alt.Tooltip("Day_Num:Q", title="🏔️ Peak Usage Day!"), alt.Tooltip("Consumption:Q", title="Peak (kWh)", format=".2f")]
         )
 
-        st.altair_chart(area_c + pts_c + avg_line_c + zero_pts_c + peak_pt_c, width="stretch")
+        st.altair_chart(area_c + pts_c + avg_line_c + zero_pts_c + peak_pt_c,use_container_width=True)
 
     with col_g2:
         st.markdown("##### ⚖️ Half-Period Drop Audit")
