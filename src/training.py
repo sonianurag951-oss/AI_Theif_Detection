@@ -254,16 +254,16 @@ def build_features(df: pd.DataFrame):
     X = df[feature_cols]
     y = df["FLAG"].astype(int) if "FLAG" in df.columns else None
     return X, y, feature_cols
-
 if __name__ == "__main__":
     df = pd.read_csv(INPUT_FILE)
+
     print("\nDataset shape:", df.shape)
     print(df.dtypes)
     print("\nFirst five rows:")
     print(df.head())
-    
-    X, y, _ = build_features(raw)
-    X = X[feature_cols]
+
+    X, y, feature_cols = build_features(df)
+
     feature_cols_file = MODEL_DIR / "feature_cols.json"
     with feature_cols_file.open("w", encoding="utf-8") as f:
         json.dump(feature_cols, f, indent=4)
@@ -620,11 +620,11 @@ if __name__ == "__main__":
             mlflow.log_artifact(str(shap_dir / "random_forest_shap_feature_importance.csv"))
         
     print("\nGenerating SHAP explanations for XGBoost...")
-    xgb_pipe        = fitted["XGBoost"]
+    xgb_pipe    = fitted["XGBoost"]
     xgb_preprocessor = xgb_pipe.named_steps["preprocess"]
-    xgb_model       = xgb_pipe.named_steps["model"]
+    xgb_model  = xgb_pipe.named_steps["model"]
     X_xgb_transformed = xgb_preprocessor.transform(X_test)
-    X_xgb_sample      = np.asarray(X_xgb_transformed[:sample_size])
+    X_xgb_sample= np.asarray(X_xgb_transformed[:sample_size])
     try:
         xgb_feature_names = xgb_preprocessor.get_feature_names_out()
     except Exception:

@@ -293,7 +293,7 @@ with tab_diagnose:
     with col_btn:
         st.write("")
         st.write("")
-        fetch_btn = st.button("📥 Fetch Readings", type="primary", width="stretch")
+        fetch_btn = st.button("📥 Fetch Readings", type="primary", use_container_width=True)
 
     # Database Sample Selector
     sample_records = get_sample_customers(limit=10) if get_sample_customers else []
@@ -481,7 +481,7 @@ with tab_diagnose:
             color=alt.Color("Color:N", scale=None),
             tooltip=["Period", "Daily_Avg_kWh"]
         ).properties(height=230)
-        st.altair_chart(h_bar, width="stretch")
+        st.altair_chart(h_bar,use_container_width=True)
         st.caption(f"H1 Avg: **{h1_mean:.2f} kWh** | H2 Avg: **{h2_mean:.2f} kWh** ({half_delta_pct:+.1f}%)")
 
 
@@ -508,12 +508,12 @@ with tab_copilot:
                 data=chat_text,
                 file_name="gridguard_investigation_log.md",
                 mime="text/markdown",
-                width="stretch"
+                use_container_width=True
             )
 
     with hist_col3:
         # Clear Chat History Button
-        if st.button("🗑️ Clear History", width="stretch"):
+        if st.button("🗑️ Clear History", use_container_width=True):
             st.session_state["copilot_chat"] = []
             st.rerun()
 
@@ -522,10 +522,10 @@ with tab_copilot:
     # QUICK QUESTION PROMPT BUTTONS
     st.markdown("##### 💡 Common Inquiries:")
     q_cols = st.columns(4)
-    q1 = q_cols[0].button("📊 Top 10 High-Risk Customers", width="stretch")
-    q2 = q_cols[1].button("🏆 Model Performance Comparison", width="stretch")
-    q3 = q_cols[2].button("🔎 Why is the #1 Customer Flagged?", width="stretch")
-    q4 = q_cols[3].button("⚡ Common Theft Patterns", width="stretch")
+    q1 = q_cols[0].button("📊 Top 10 High-Risk Customers", use_container_width=True)
+    q2 = q_cols[1].button("🏆 Model Performance Comparison", use_container_width=True)
+    q3 = q_cols[2].button("🔎 Why is the #1 Customer Flagged?", use_container_width=True)
+    q4 = q_cols[3].button("⚡ Common Theft Patterns", use_container_width=True)
 
     # Get active customer context from Diagnostic tab
     current_res = st.session_state.get("analysis_result")
