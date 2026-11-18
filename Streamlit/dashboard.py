@@ -145,7 +145,7 @@ def dossier_card(meta, hist_badge):
 st.sidebar.title("⚡ GridGuard")
 st.sidebar.caption("Advanced AI Electricity Theft Detection")
 
-api_url = st.sidebar.text_input("FastAPI Address", "http://127.0.0.1:8001").rstrip("/")
+api_url = st.sidebar.text_input("FastAPI Address", "http://127.0.0.1:8000").rstrip("/")
 ollama_model = st.sidebar.text_input("Ollama LLM Model", "llama3.2:3b")
 risk_threshold = st.sidebar.slider("Inspection Threshold", 0.05, 0.60, 0.20, 0.01)
 use_ollama = st.sidebar.toggle("Enable AI Inspection Notes", value=True)
@@ -570,29 +570,3 @@ with tab_copilot:
                 st.markdown(reply)
                 # Add Assistant Response to History
                 st.session_state["copilot_chat"].append({"role": "assistant", "content": reply})
-
-
-# MODEL BENCHMARK & PERFORMANCE
-# with tab_model_metrics:
-#     st.subheader("📈 Machine Learning Performance & Validation")
-#     metrics = check_api("/metrics")
-
-#     if metrics and metrics.get("test"):
-#         test_df = pd.DataFrame(metrics["test"])
-#         st.markdown("##### Held-Out Test Evaluation")
-#         st.dataframe(test_df.round(4), hide_index=True, width="stretch")
-
-#         if "pr_auc" in test_df.columns:
-#             m_chart = alt.Chart(test_df).mark_bar(color="#2563eb").encode(
-#                 x=alt.X("model:N", title="Candidate Architecture"),
-#                 y=alt.Y("pr_auc:Q", title="PR-AUC Score", scale=alt.Scale(domain=[0, 1])),
-#                 tooltip=["model", "pr_auc", "roc_auc"]
-#             )
-#             st.altair_chart(m_chart, width="stretch")
-
-#         if metrics.get("cv"):
-#             st.markdown("##### Stratified 5-Fold Cross-Validation")
-#             cv_df = pd.DataFrame(metrics["cv"])
-#             st.dataframe(cv_df.round(4), hide_index=True, width="stretch")
-#     else:
-#         st.info("Run `python src/training.py` once to train and log model comparison metrics.")
