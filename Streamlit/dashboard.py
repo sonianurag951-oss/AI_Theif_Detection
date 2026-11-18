@@ -145,7 +145,7 @@ def dossier_card(meta, hist_badge):
 st.sidebar.title("⚡ GridGuard")
 st.sidebar.caption("Advanced AI Electricity Theft Detection")
 
-api_url = st.sidebar.text_input("FastAPI Address", "http://127.0.0.1:8000").rstrip("/")
+api_url = st.sidebar.text_input("FastAPI Address", "http://127.0.0.1:8001").rstrip("/")
 ollama_model = st.sidebar.text_input("Ollama LLM Model", "llama3.2:3b")
 risk_threshold = st.sidebar.slider("Inspection Threshold", 0.05, 0.60, 0.20, 0.01)
 use_ollama = st.sidebar.toggle("Enable AI Inspection Notes", value=True)
@@ -240,9 +240,9 @@ def get_preset_readings(scenario: str):
 
 # SESSION STATE INITIALIZATION
 if "cust_id_input" not in st.session_state:
-    st.session_state["cust_id_input"] = "7ABCEC7B9CB9E49B2AC3BA29B21585EB"
+    st.session_state["cust_id_input"] = ""
 if "meter_id_input" not in st.session_state:
-    st.session_state["meter_id_input"] = "MTR01077"
+    st.session_state["meter_id_input"] = ""
 if "customer_meta" not in st.session_state:
     st.session_state["customer_meta"] = None
 if "customer_readings" not in st.session_state:
@@ -266,10 +266,9 @@ st.title("⚡ Electricity Theft Diagnostic Intelligence")
 st.markdown("Analyze customer 26-day smart meter consumption patterns, calculate theft probability, and generate AI field inspection memos.")
 
 # MAIN TABS
-tab_diagnose, tab_copilot, tab_model_metrics = st.tabs([
+tab_diagnose, tab_copilot = st.tabs([
     "🔍 Single Customer Diagnostic",
-    "🤖 AI Investigation Copilot",
-    "📈 Model Benchmark & CV"
+    "🤖 AI Investigation Copilot"
 ])
 
 
